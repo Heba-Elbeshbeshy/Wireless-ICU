@@ -5,7 +5,7 @@ int Temp2=0;
 int Hum2=0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(38400);
 }
 
 void loop() {
