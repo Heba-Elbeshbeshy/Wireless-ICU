@@ -1,29 +1,37 @@
-// Include the libraries
+  // Include the libraries
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
 
-
-#define serverPostURL "http://toto3.pythonanywhere.com/test/"
-#define serverGetURL "http://toto3.pythonanywhere.com/test/"
+#define serverPostURL "http://toto3.pythonanywhere.com/Post_4_Readings/" 
+#define serverGetURL "http://meirr.pythonanywhere.com/GetRate/" 
 
 #define ssid "STUDBME2"
 #define pass "BME2Stud"
 
-//#define ssid ""
-//#define pass ""
+//#define ssid "Meirna" 
+//#define pass "123456789" 
 
+//#define ssid "khhh_h" 
+//#define pass "01145450275"
 
-boolean Emergency = false;
-String array_of_readings[5];
+//#define ssid "Walaa" 
+//#define pass "riri7006"
 
-int ledState=0;
-int Temp1 = 0;
-int Hum1 = 0;
-int Temp2 = 0;
-int Hum2 = 0;
+//#define ssid "Rannnia" 
+//#define pass "0111034249888"
 
+String array_of_readings[4];
+
+String Temp1; 
+String Hum1 ;
+
+String Temp2; 
+String Hum2; 
+
+String Emergency; 
+int ledState;
 
 void connectToWiFi();
 void getDataFromArduino ( );
@@ -42,40 +50,47 @@ void loop() {
   if (WiFi.status() == WL_CONNECTED) 
   { 
     getDataFromArduino( );
-    httpPostRequest ( array_of_readings ); 
-    httpGetRequest( ); 
+//    httpGetRequest( ); 
   }
   else 
   {
     Serial.println("Error in WiFi connection");
   }
-  //Send a request every 10 seconds
-  delay(1000);  
-  if(Emergency)
+  
+  if(Emergency == "1")
   {
-     //       turn on led
+    Serial.println("EMERGENCY");
+     // turn on led
     ledState = 1;
     Serial.write(ledState);
   }
   else
   {
-   // turn on led
+   // turn off led
     ledState = 0;
     Serial.write(ledState);
    }
+  //Send a request every 10 seconds
+  delay(1000);  
 }
-
 
 void getDataFromArduino ()
 {
 // Checks whether data is comming from the serial
-  if(Serial.available() > 0){  
-     // dht sensor for reading humidity
-    Temp1 = Serial.read();
-    Hum1 = Serial.read();
+  if(Serial.available() > 0){ 
     
-    Temp2 = Serial.read();
-    Hum2 = Serial.read();
+    String readStr;
+    while(Serial.available() > 0)
+  {
+    readStr += char(Serial.read());
+//    Serial.println(readStr);
+  }
+
+    Temp1 = readStr.substring(0, 5);
+    Hum1 = readStr.substring(6, 11);
+
+    Temp2 = readStr.substring(12, 17);
+    Hum2 = readStr.substring(18, 23);
 
     //integer to string conversion
     String Temperature1 = String(Temp1) + String("°C"); 
@@ -83,25 +98,24 @@ void getDataFromArduino ()
     String Temperature2 = String(Temp2) + String("°C"); 
     String Humidity2 = String(Hum2) + String("%");   
 
-    
-    Serial.print(" Temperature1: ");
-    Serial.print(Temperature1);
-    Serial.print(" Humidity1: ");
-    Serial.print(Humidity1);
-    Serial.print(" Temperature2: ");
-    Serial.print(Temperature2);
-    Serial.print(" Humidity2: ");
-    Serial.print(Humidity2);
-    Serial.println();
+    Serial.println(" Temperature1: "); 
+    Serial.println(Temperature1); 
+    Serial.println(" Humidity1: "); 
+    Serial.println(Humidity1); 
+    Serial.println(" Temperature2: "); 
+    Serial.println(Temperature2); 
+    Serial.println(" Humidity2: "); 
+    Serial.println(Humidity2); 
+    Serial.println(); 
    
     array_of_readings[0] = String(Temp1);
     array_of_readings[1] = String(Hum1);
     array_of_readings[2] = String(Temp2);
     array_of_readings[3] = String(Hum2);
+    httpPostRequest ( array_of_readings );
 
     delay(3000);
   }
-
 }
 
 //----------------------------------------------------------//
@@ -117,8 +131,8 @@ void httpPostRequest ( String arr[] )
    StaticJsonBuffer<200> jsonBuffer;
    JsonObject& values = jsonBuffer.createObject();
    
-   values["Temperature"] = arr[0];
-   values["Humidity"] = arr[1];
+   values["Temperature1"] = arr[0];
+   values["Humidity1"] = arr[1];
    values["Temperature2"] = arr[2];
    values["Humidity2"] = arr[3];
    
@@ -126,40 +140,47 @@ void httpPostRequest ( String arr[] )
     values.prettyPrintTo(json_str, sizeof(json_str));
     int httpCode = http.POST(json_str);   //Send the request
     Serial.println("in post fun");
+    Serial.println(httpCode); 
+    Serial.println(json_str);
     
     if(httpCode > 0){
       if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
           String payload = http.getString();
-          Serial.print("Response: ");Serial.println(payload);
+          Serial.print("Response: ");
+          Serial.println(payload);
         }
     }
     else{
          Serial.printf("[HTTP] GET... failed, error: %s", http.errorToString(httpCode).c_str());
     }
         http.end();  //Close connection
-        
-//   sprintf(json_str, "{\"Readings\":[%s,%s,%s,%s,%s]}", arr[0], arr[1], arr[2], arr[3], arr[4]);
-//   sprintf(json_str, "{\"Readings\":[%d,%d,%d,%d,%d]}", arr[0], arr[1], arr[2], arr[3], arr[4]);
-
+  
 }
 
 //----------------------------------------------------------//
 void httpGetRequest()
 {
+    Serial.println("in GET Fun"); 
     WiFiClient client; // Set up the client objet
     HTTPClient http;
     
     http.begin( client, serverGetURL ); //Specify request destination
     int httpCode = http.GET(); //get the request
-      
+    Serial.println("httpCode2");
+    Serial.println(httpCode);
+    
      if(httpCode > 0)
      {
        String payload = http.getString();
-       Serial.write(payload[1]);
-       Serial.print("Response: ");
-       Serial.println(payload);
-       Emergency = payload[1];
-       
+//       Serial.write(payload[0]); 
+//       Serial.print("Response: "); 
+//       Serial.println(payload); 
+         
+       Emergency = payload;
+        
+       Serial.print("Emergency: "); 
+       Serial.println(Emergency); 
+
       http.end(); 
      }
 }
