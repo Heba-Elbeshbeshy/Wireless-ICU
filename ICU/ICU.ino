@@ -10,18 +10,6 @@
 #define ssid "STUDBME2"
 #define pass "BME2Stud"
 
-//#define ssid "Meirna" 
-//#define pass "123456789" 
-
-//#define ssid "khhh_h" 
-//#define pass "01145450275"
-
-//#define ssid "Walaa" 
-//#define pass "riri7006"
-
-//#define ssid "Rannnia" 
-//#define pass "0111034249888"
-
 String array_of_readings[4];
 
 String Temp1; 
